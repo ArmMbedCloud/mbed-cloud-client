@@ -64,6 +64,10 @@ public:
     bool define_resource_internal(string v,
                                   M2MBase::Operation opr,
                                   bool observable);
+    bool define_resource_internal(string v,
+                                  M2MBase::Operation opr,
+                                  bool observable,
+                                  const char* friendly_name);
 
     /**
      * \brief Gets the value set in a resource in text format.
@@ -231,7 +235,8 @@ public:
                 int v,
                 M2MBase::Operation opr = M2MBase::GET_PUT_ALLOWED,
                 bool observable = true,
-                FP1<void, int> on_update = NULL);
+                FP1<void, int> on_update = NULL,
+                const char* friendly_name = "");
 
     /**
      *  \brief Constructor. This is an overloaded function
@@ -249,7 +254,8 @@ public:
                 int v,
                 M2MBase::Operation opr,
                 bool observable,
-                void(*on_update)(int));
+                void(*on_update)(int),
+                const char* friendly_name = "");
 
     /**
      * \brief Destructor
@@ -274,6 +280,57 @@ public:
 
 private:
     FP1<void, int>                  _on_update;
+};
+
+class SimpleM2MResourceFloat : public SimpleM2MResourceBase
+{
+public:
+
+    /**
+     *  \brief Constructor.
+     */
+    SimpleM2MResourceFloat(MbedCloudClient* client,
+                const char* route,
+                float v,
+                M2MBase::Operation opr = M2MBase::GET_PUT_ALLOWED,
+                bool observable = true,
+                FP1<void, float> on_update = NULL,
+                const char* friendly_name = "");
+
+    /**
+     *  \brief Constructor. This is an overloaded function
+     */
+    SimpleM2MResourceFloat(MbedCloudClient* client,
+                const char* route,
+                float v,
+                M2MBase::Operation opr,
+                bool observable,
+                void(*on_update)(float),
+                const char* friendly_name = "");
+
+    /**
+     * \brief Destructor
+     */
+    virtual ~SimpleM2MResourceFloat();
+
+    /**
+     * \brief Overloaded operator for = operation.
+     */
+    float operator=(float new_value);
+
+    /**
+     * \brief Overloaded operator for float() operation.
+     */
+    operator float() const;
+
+    /**
+    * \brief Calls when there is an indication that the value of the resource
+    * object is updated by the LWM2M Cloud server.
+    */
+    virtual void update();
+
+private:
+    FP1<void, float>                  _on_update;
 };
 
 #endif // SIMPLE_M2M_RESOURCE_H

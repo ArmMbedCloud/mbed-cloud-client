@@ -23,6 +23,10 @@
 #include "ns_hal_init.h"
 #include "mbed-trace/mbed_trace.h"
 
+#include "MQTTDataProvider.h"
+#include "MQTTThreadedClient.h"
+#include "NetworkInterface.h"
+
 #include <assert.h>
 
 #define xstr(s) str(s)
@@ -36,12 +40,17 @@
     #define MBED_CLIENT_EVENT_LOOP_SIZE 1024
 #endif
 
+#include "rtos.h"
+Thread msgSender;
+Thread msgReader;
+
 MbedCloudClient::MbedCloudClient()
 :_client(*this),
  _value_callback(NULL),
  _error_description(NULL)
 {
     ns_hal_init(NULL, MBED_CLIENT_EVENT_LOOP_SIZE, NULL, NULL);
+    _dataStreamingStarted = false;
 }
 
 MbedCloudClient::~MbedCloudClient()
@@ -107,6 +116,52 @@ bool MbedCloudClient::setup(void* iface)
     _client.connector_client().m2m_interface()->set_platform_network_handler(iface);
 
     _client.initialize_and_register(_object_list);
+
+    _networkInterface = (NetworkInterface*) iface;
+    return true;
+}
+
+bool MbedCloudClient::startDataStreaming()
+{
+    // return if we already streaming
+    if (_dataStreamingStarted)
+      return false;
+
+    const char* deviceId = endpoint_info()->internal_endpoint_name.c_str();
+    /* TBD: Check if we are ready to start streaming?
+       1. We have authenticated, either through Device Management or otherwise.
+       2. We have the creds and resources registered etc.
+    */
+
+    // Ardaman TBD TODO: Read configuration to for data protocol, data destination, sensor rate etc.
+
+    // Step 1.
+    //   - Read configs (from file, and/or from cloud - merge them) for:
+    //     - Stream Data or not
+    //     - Which protocol to use
+    //     - Which certs to use? Mbed Device Management, or cusomt
+    // TBD: Implement
+
+    // Step 2.
+    //   - Config: which topic to send messages to, which network i/f to use
+    //   - Instantiate MQTTThreadedClient in a separate thread, start it
+    //
+    printf("==ADS: Setting up MQTTThreadedClient....\n");
+    MQTT::MQTTThreadedClient* mqtt = new MQTT::MQTTThreadedClient((char *) deviceId, _networkInterface);
+    printf("==ADS: Starting Listener....\n");
+    msgSender.start(mbed::callback(mqtt, &MQTT::MQTTThreadedClient::startListener));
+
+    // Step 3.
+    //   - Read config (from file, and/or from cloud - merge them) for:
+    //     - Which resources to stream data for, and at what frequency
+    //     - What processing logic to use (threshold, moving average, delta, delta threshold etc.)
+    //   - Start the Data Reading thread to read data from sensors, and add it onto the MQTTClient message queue
+    // 
+    printf("==ADS: Setting up MQTTDataProvider....\n");
+    MQTTDataProvider* mqttDataProvider = new MQTTDataProvider((char *) deviceId, _resources);
+    printf("==ADS: Starting readValues....\n");
+    msgReader.start(mbed::callback(mqttDataProvider, &MQTTDataProvider::readValues));
+
     return true;
 }
 

@@ -44,6 +44,11 @@ SimpleM2MResourceBase::~SimpleM2MResourceBase()
 
 bool SimpleM2MResourceBase::define_resource_internal(std::string v, M2MBase::Operation opr, bool observable)
 {
+   return SimpleM2MResourceBase::define_resource_internal(v, opr, observable, (const char*) "");
+}
+
+bool SimpleM2MResourceBase::define_resource_internal(std::string v, M2MBase::Operation opr, bool observable, const char* friendly_name)
+{
     tr_debug("SimpleM2MResourceBase::define_resource_internal(), resource name %s!\r\n", _route.c_str());
 
     vector<string> segments = parse_route(_route.c_str());
@@ -88,7 +93,7 @@ bool SimpleM2MResourceBase::define_resource_internal(std::string v, M2MBase::Ope
     // @todo check if the resource exists yet
     M2MResource* res = inst->resource(segments.at(2).c_str());
     if(!res) {
-        res = inst->create_dynamic_resource(segments.at(2).c_str(), "",
+        res = inst->create_dynamic_resource(segments.at(2).c_str(), friendly_name,
             M2MResourceInstance::STRING, observable);
         if(!res) {
             return false;
@@ -264,14 +269,15 @@ SimpleM2MResourceInt::SimpleM2MResourceInt(MbedCloudClient* client,
                          int v,
                          M2MBase::Operation opr,
                          bool observable,
-                         FP1<void, int> on_update)
+                         FP1<void, int> on_update,
+                         const char* friendly_name)
 : SimpleM2MResourceBase(client,route),_on_update(on_update)
 {
     tr_debug("SimpleM2MResourceInt::SimpleM2MResourceInt() creating (%s)\r\n", route);
     char buffer[20];
     int size = sprintf(buffer,"%d",v);
     std::string stringified(buffer,size);
-    define_resource_internal(stringified, opr, observable);
+    define_resource_internal(stringified, opr, observable, friendly_name);
 }
 
 SimpleM2MResourceInt::SimpleM2MResourceInt(MbedCloudClient* client,
@@ -279,7 +285,8 @@ SimpleM2MResourceInt::SimpleM2MResourceInt(MbedCloudClient* client,
                          int v,
                          M2MBase::Operation opr,
                          bool observable,
-                         void(*on_update)(int))
+                         void(*on_update)(int),
+                         const char* friendly_name)
 : SimpleM2MResourceBase(client,route)
 {
     tr_debug("SimpleM2MResourceInt::SimpleM2MResourceInt() overloaded creating (%s)\r\n", route);
@@ -289,7 +296,7 @@ SimpleM2MResourceInt::SimpleM2MResourceInt(MbedCloudClient* client,
     char buffer[20];
     int size = sprintf(buffer,"%d",v);
     std::string stringified(buffer,size);
-    define_resource_internal(stringified, opr, observable);
+    define_resource_internal(stringified, opr, observable, friendly_name);
 }
 
 SimpleM2MResourceInt::~SimpleM2MResourceInt()
@@ -311,6 +318,69 @@ SimpleM2MResourceInt::operator int() const
 }
 
 void SimpleM2MResourceInt::update()
+{
+    string v = get();
+    if (v.empty()) {
+        _on_update(0);
+    } else {
+        _on_update(atoi((const char*)v.c_str()));
+    }
+}
+
+SimpleM2MResourceFloat::SimpleM2MResourceFloat(MbedCloudClient* client,
+                         const char* route,
+                         float v,
+                         M2MBase::Operation opr,
+                         bool observable,
+                         FP1<void, float> on_update,
+                         const char* friendly_name)
+: SimpleM2MResourceBase(client,route),_on_update(on_update)
+{
+    tr_debug("SimpleM2MResourceFloat::SimpleM2MResourceFloat() creating (%s)\r\n", route);
+    char buffer[128];
+    int size = sprintf(buffer,"%d",v);
+    std::string stringified(buffer,size);
+    define_resource_internal(stringified, opr, observable, friendly_name);
+}
+
+SimpleM2MResourceFloat::SimpleM2MResourceFloat(MbedCloudClient* client,
+                         const char* route,
+                         float v,
+                         M2MBase::Operation opr,
+                         bool observable,
+                         void(*on_update)(float),
+                         const char* friendly_name)
+: SimpleM2MResourceBase(client,route)
+{
+    tr_debug("SimpleM2MResourceFloat::SimpleM2MResourceFloat() overloaded creating (%s)\r\n", route);
+    FP1<void, float> fp;
+    fp.attach(on_update);
+    _on_update = fp;
+    char buffer[128];
+    int size = sprintf(buffer,"%d",v);
+    std::string stringified(buffer,size);
+    define_resource_internal(stringified, opr, observable, friendly_name);
+}
+
+SimpleM2MResourceFloat::~SimpleM2MResourceFloat()
+{
+}
+
+float SimpleM2MResourceFloat::operator=(float new_value)
+{
+    set(new_value);
+    return new_value;
+}
+
+SimpleM2MResourceFloat::operator float() const
+{
+    string v = get();
+    if (v.empty()) return 0;
+
+    return atof((const char*)v.c_str());
+}
+
+void SimpleM2MResourceFloat::update()
 {
     string v = get();
     if (v.empty()) {

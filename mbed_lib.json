@@ -1,5 +1,5 @@
 {
-    "name": "mbed-cloud-client",
+    "name": "pelion-client",
     "macros" : [
         "MBEDTLS_PEM_WRITE_C",
         "MBEDTLS_CMAC_C",

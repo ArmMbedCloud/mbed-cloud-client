@@ -25,8 +25,10 @@
 #include <vector>
 #include "include/ServiceClient.h"
 #include "mbed-cloud-client/MbedCloudClientConfig.h"
+#include "NetworkInterface.h"
 
 using namespace std;
+
 class SimpleM2MResourceBase;
 
 /**
@@ -163,6 +165,12 @@ public:
      * other platforms.
      */
     bool setup(void* iface);
+
+
+    /**
+     * \brief Initiates data streaming to cloud data backend
+     */
+    bool startDataStreaming();
 
     /**
      * \brief Sets the callback function that is called when the client is registered
@@ -376,7 +384,8 @@ private:
     FP0<void>                                       _on_registration_updated;
     FP1<void,int>                                   _on_error;
     const char                                      *_error_description;
-
+    bool                                            _dataStreamingStarted;
+    NetworkInterface*                               _networkInterface;
 
 friend class SimpleM2MResourceBase;
 };
