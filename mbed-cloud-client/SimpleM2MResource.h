@@ -90,6 +90,13 @@ public:
     bool set(const int& v);
 
     /**
+     * \brief Sets the value in a resource in float format.
+     * \param v The value to be set.
+     * \return True if set successfully, else false.
+     */
+    bool set(const float& v);
+
+    /**
      * \brief Sets the callback function to be called
      * when the resource received a POST command.
      * \param fn A function to be called.

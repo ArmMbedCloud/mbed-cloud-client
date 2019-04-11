@@ -163,6 +163,15 @@ bool SimpleM2MResourceBase::set(string v)
     return true;
 }
 
+bool SimpleM2MResourceBase::set(const float& v)
+{
+    char buffer[20];
+    int size = sprintf(buffer,"%f",v);
+    std::string stringified(buffer,size);
+
+    return set(stringified);
+}
+
 bool SimpleM2MResourceBase::set(const int& v)
 {
     char buffer[20];
@@ -338,7 +347,7 @@ SimpleM2MResourceFloat::SimpleM2MResourceFloat(MbedCloudClient* client,
 {
     tr_debug("SimpleM2MResourceFloat::SimpleM2MResourceFloat() creating (%s)\r\n", route);
     char buffer[128];
-    int size = sprintf(buffer,"%d",v);
+    int size = sprintf(buffer,"%f",v);
     std::string stringified(buffer,size);
     define_resource_internal(stringified, opr, observable, friendly_name);
 }
@@ -357,7 +366,7 @@ SimpleM2MResourceFloat::SimpleM2MResourceFloat(MbedCloudClient* client,
     fp.attach(on_update);
     _on_update = fp;
     char buffer[128];
-    int size = sprintf(buffer,"%d",v);
+    int size = sprintf(buffer,"%f",v);
     std::string stringified(buffer,size);
     define_resource_internal(stringified, opr, observable, friendly_name);
 }

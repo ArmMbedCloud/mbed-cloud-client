@@ -96,8 +96,8 @@ void MQTTDataProvider::readValues() {
          printf("sending to topic=%s payload=%s\r\n", &message.topic[0],   &message.payload[0] );
 
          message.payloadlen = strlen((const char *) &message.payload[0]);
-         // ADS DEBUG int ret = mqtt->publish(message);
-         // if (ret) printf("ERROR mqtt.publish() ret=%d  ", ret);
-         // if (ret) Thread::wait(6000);
+         int ret = mqtt->publish(message);
+         if (ret) printf("ERROR mqtt.publish() ret=%d  ", ret);
+         if (ret) Thread::wait(6000);
      }
 } 
